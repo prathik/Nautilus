@@ -15,9 +15,10 @@
 package cmd
 
 import (
+	"database/sql"
 	"fmt"
+	_ "github.com/mattn/go-sqlite3"
 	"github.com/prathik/spacedrepetition/service"
-
 	"github.com/spf13/cobra"
 )
 
@@ -32,9 +33,30 @@ Cobra is a CLI library for Go that empowers applications.
 This application is a tool to generate the needed files
 to quickly create a Cobra application.`,
 	Run: func(cmd *cobra.Command, args []string) {
-		spacedRepetition := service.SpacedRepetition{}
+		db, dbErr := sql.Open("sqlite3", "./sr.db")
+		if dbErr != nil {
+			panic(dbErr)
+		}
+
+		spacedRepetition := service.SpacedRepetition{
+			SqlDataBase: db,
+		}
 		topic := spacedRepetition.GetTopicNow()
+
+		if topic == nil {
+			fmt.Println("Nothing to recall now. Add more topics.")
+			return
+		}
+
 		fmt.Println(topic.Title)
+
+		fmt.Print("Did you recall this item? [y/n]: ")
+		var input string
+		_, _ = fmt.Scanln(&input)
+
+		if input == "y" {
+			spacedRepetition.RescheduleTopic(topic)
+		}
 	},
 }
 
