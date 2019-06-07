@@ -238,6 +238,31 @@ insert into sr_data (title, times, next_run) values ("%s", 0, "%s")
 	}
 }
 
+func TestSpacedRepetition_GivenTopics_WhenGetAllCalled_ThenReturnAllTopicSlice(t *testing.T) {
+	db := getDb(t)
+	defer db.Close()
+	defer func(){
+		_ = os.Remove("./sr.db")
+	}()
+
+	sr := SpacedRepetition{
+		SqlDataBase:db,
+	}
+
+	// Create table
+	sr.Init()
+
+	sr.Add(&Topic{Title: "Test"})
+	sr.Add(&Topic{Title: "Test One"})
+	sr.Add(&Topic{Title: "Test Two"})
+
+	topics := sr.GetAll()
+
+	if len(topics) != 3 {
+		t.Errorf("All topics have not been fetched.")
+	}
+}
+
 func getDb(t *testing.T) *sql.DB {
 	_ = os.Remove("./sr.db")
 

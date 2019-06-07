@@ -94,3 +94,38 @@ func (sr SpacedRepetition) RescheduleTopic(topic *Topic) {
 	_, _ = sr.SqlDataBase.Exec(fmt.Sprintf(updateStatement, nextRunTime.Format(
 		time.RFC3339), topic.Id))
 }
+
+func (sr SpacedRepetition) GetAll() (topics []Topic) {
+	getAllSql := "SELECT id, title, times, next_run FROM sr_data"
+	rows, err := sr.SqlDataBase.Query(getAllSql)
+
+	if err != nil {
+		panic(err)
+	}
+
+	defer rows.Close()
+
+	for rows.Next() {
+		var id int64
+		var title string
+		var times int
+		var nextRun string
+
+		err := rows.Scan(&id, &title, &times, &nextRun)
+		if err != nil {
+			panic(err)
+		}
+
+		nextRunTime, _ := time.Parse(time.RFC3339, nextRun)
+		topic := Topic{
+			Id: id,
+			Title: title,
+			Times: times,
+			NextRun: nextRunTime,
+		}
+
+		topics = append(topics, topic)
+	}
+
+	return topics
+}
