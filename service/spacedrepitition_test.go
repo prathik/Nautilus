@@ -90,7 +90,7 @@ func TestSpacedRepetition_DoubleInit(t *testing.T) {
 	}
 
 	sr.Init()
-	sr.Add(Topic{
+	sr.Add(&Topic{
 		Title: "Test",
 	})
 	sr.Init()
