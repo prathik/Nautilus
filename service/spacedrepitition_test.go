@@ -2,6 +2,7 @@ package service
 
 import (
 	"database/sql"
+	"fmt"
 	_ "github.com/mattn/go-sqlite3"
 	"os"
 	"testing"
@@ -22,7 +23,7 @@ func TestSpacedRepetition_Add(t *testing.T) {
 
 	sr.Init()
 
-	sr.Add(Topic{
+	sr.Add(&Topic{
 		Title: "Test",
 	})
 
@@ -100,6 +101,55 @@ func TestSpacedRepetition_DoubleInit(t *testing.T) {
 		if count != 1 {
 			t.Fail()
 		}
+	}
+}
+
+func TestSpacedRepetition_GivenTopicInDb_WhenGetCalled_ReturnTopTopic(t *testing.T)  {
+	db := getDb(t)
+	defer db.Close()
+	defer func(){
+		_ = os.Remove("./sr.db")
+	}()
+
+	sr := SpacedRepetition{
+		SqlDataBase:db,
+	}
+
+	// Create table
+	sr.Init()
+
+	insertStatementTemplate := `
+insert into sr_data (title, times, next_run) values ("%s", 0, "%s")
+`
+	_, _ = db.Exec(fmt.Sprintf(insertStatementTemplate, "Test", time.Now().String()))
+	_, _ = db.Exec(fmt.Sprintf(insertStatementTemplate, "Test Old", time.Now().Add(
+		time.Hour * time.Duration(-1)).String()))
+
+	topic := sr.GetTopicNow()
+
+	if topic.Title != "Test Old" {
+		t.Error("Invalid topic: " + topic.Title)
+	}
+}
+
+func TestSpacedRepetition_GivenNoTopicInDb_WhenGetCalled_ReturnTopTopic(t *testing.T)  {
+	db := getDb(t)
+	defer db.Close()
+	defer func(){
+		_ = os.Remove("./sr.db")
+	}()
+
+	sr := SpacedRepetition{
+		SqlDataBase:db,
+	}
+
+	// Create table
+	sr.Init()
+
+	topic := sr.GetTopicNow()
+
+	if topic != nil {
+		t.Error("Topic is present.")
 	}
 }
 

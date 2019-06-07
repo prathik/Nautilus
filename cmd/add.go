@@ -40,7 +40,7 @@ to quickly create a Cobra application.`,
 		}
 		sr.Init()
 
-		sr.Add(service.Topic{
+		sr.Add(&service.Topic{
 			Title: args[0],
 		})
 	},
