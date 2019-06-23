@@ -20,6 +20,7 @@ import (
 	_ "github.com/mattn/go-sqlite3"
 	"github.com/prathik/spacedrepetition/service"
 	"github.com/spf13/cobra"
+	"strings"
 )
 
 // todayCmd represents the today command
@@ -44,7 +45,8 @@ to quickly create a Cobra application.`,
 
 		spacedRepetition.Init()
 
-		topic := spacedRepetition.GetTopicNow()
+		loadTopic:
+			topic := spacedRepetition.GetTopicNow()
 
 		if topic == nil {
 			fmt.Println("Nothing to recall now. Add more topics.")
@@ -53,13 +55,16 @@ to quickly create a Cobra application.`,
 
 		fmt.Println(topic.Title)
 
-		fmt.Print("Did you recall this item? [y/n]: ")
+		fmt.Print("Did you recall this item? [Y/n]: ")
 		var input string
 		_, _ = fmt.Scanln(&input)
 
-		if input == "y" {
+		if strings.ToLower(input) == "y" || input == "" {
+			fmt.Println("Great! Let's recall this later!")
 			spacedRepetition.RescheduleTopic(topic)
 		}
+
+		goto loadTopic
 	},
 }
 
