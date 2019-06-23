@@ -62,6 +62,21 @@ to quickly create a Cobra application.`,
 		if strings.ToLower(input) == "y" || input == "" {
 			fmt.Println("Great! Let's recall this later!")
 			spacedRepetition.RescheduleTopic(topic)
+		} else {
+			// TODO: Add ask remove question.
+			fmt.Print("Do you want to review and recall after an hour " +
+				"[No deletes the topic]? [Y/n]: ")
+
+			// Clear previous input.
+			input = ""
+
+			// Get user input for the current question.
+			_, _ = fmt.Scanln(&input)
+
+			if strings.ToLower(input) == "y" || input == "" {
+				fmt.Println("Do re-review! Let's recall this later!")
+				spacedRepetition.RescheduleTopicOneHour(topic)
+			}
 		}
 
 		goto loadTopic

@@ -86,8 +86,19 @@ WHERE next_run <= "%s" ORDER BY next_run ASC LIMIT 1
 func (sr SpacedRepetition) RescheduleTopic(topic *Topic) {
 	timeFactor := topic.Times + 1
 
-	nextRunTime := topic.NextRun.Add(
+	nextRunTime := time.Now().Add(
 		time.Hour * time.Duration(24 * 3 * timeFactor))
+
+	updateStatement := `UPDATE sr_data set next_run = "%s", times = times + 1 WHERE id = %d`
+
+	_, _ = sr.SqlDataBase.Exec(fmt.Sprintf(updateStatement, nextRunTime.Format(
+		time.RFC3339), topic.Id))
+}
+
+//RescheduleTopicOneHour reschedules the topic for the next hour.
+func (sr SpacedRepetition) RescheduleTopicOneHour(topic *Topic) {
+	nextRunTime := time.Now().Add(
+		time.Hour * 1)
 
 	updateStatement := `UPDATE sr_data set next_run = "%s" WHERE id = %d`
 

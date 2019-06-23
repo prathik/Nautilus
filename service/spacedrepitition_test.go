@@ -3,10 +3,11 @@ package service
 import (
 	"database/sql"
 	"fmt"
-	_ "github.com/mattn/go-sqlite3"
 	"os"
 	"testing"
 	"time"
+
+	_ "github.com/mattn/go-sqlite3"
 )
 
 func TestSpacedRepetition_Add(t *testing.T) {
@@ -15,7 +16,6 @@ func TestSpacedRepetition_Add(t *testing.T) {
 	defer func() {
 		_ = os.Remove("./sr.db")
 	}()
-
 
 	sr := SpacedRepetition{
 		SqlDataBase: db,
@@ -62,12 +62,12 @@ from sr_data`)
 		nr, _ := time.Parse(time.RFC3339,
 			nextRun)
 
-		if nr.Before(time.Now().Add(time.Minute * 59)) == true {
+		if nr.Before(time.Now().Add(time.Minute*59)) == true {
 			t.Errorf("%s is before 1 hour. Base time %s", nr.String(),
 				nextRun)
 		}
 
-		if nr.After(time.Now().Add(time.Minute * 61)) == true {
+		if nr.After(time.Now().Add(time.Minute*61)) == true {
 			t.Fail()
 		}
 
@@ -85,7 +85,6 @@ func TestSpacedRepetition_DoubleInit(t *testing.T) {
 	defer func() {
 		_ = os.Remove("./sr.db")
 	}()
-
 
 	sr := SpacedRepetition{
 		SqlDataBase: db,
@@ -106,15 +105,15 @@ func TestSpacedRepetition_DoubleInit(t *testing.T) {
 	}
 }
 
-func TestSpacedRepetition_GivenTopicInDb_WhenGetCalled_ReturnTopTopic(t *testing.T)  {
+func TestSpacedRepetition_GivenTopicInDb_WhenGetCalled_ReturnTopTopic(t *testing.T) {
 	db := getDb(t)
 	defer db.Close()
-	defer func(){
+	defer func() {
 		_ = os.Remove("./sr.db")
 	}()
 
 	sr := SpacedRepetition{
-		SqlDataBase:db,
+		SqlDataBase: db,
 	}
 
 	// Create table
@@ -125,7 +124,7 @@ insert into sr_data (title, times, next_run) values ("%s", 0, "%s")
 `
 	_, _ = db.Exec(fmt.Sprintf(insertStatementTemplate, "Test", time.Now().Format(time.RFC3339)))
 	_, _ = db.Exec(fmt.Sprintf(insertStatementTemplate, "Test Old", time.Now().Add(
-		time.Hour * time.Duration(-1)).Format(time.RFC3339)))
+		time.Hour*time.Duration(-1)).Format(time.RFC3339)))
 
 	topic := sr.GetTopicNow()
 
@@ -134,15 +133,15 @@ insert into sr_data (title, times, next_run) values ("%s", 0, "%s")
 	}
 }
 
-func TestSpacedRepetition_GivenNoTopicInDb_WhenGetCalled_ReturnTopTopic(t *testing.T)  {
+func TestSpacedRepetition_GivenNoTopicInDb_WhenGetCalled_ReturnTopTopic(t *testing.T) {
 	db := getDb(t)
 	defer db.Close()
-	defer func(){
+	defer func() {
 		_ = os.Remove("./sr.db")
 	}()
 
 	sr := SpacedRepetition{
-		SqlDataBase:db,
+		SqlDataBase: db,
 	}
 
 	// Create table
@@ -155,35 +154,16 @@ func TestSpacedRepetition_GivenNoTopicInDb_WhenGetCalled_ReturnTopTopic(t *testi
 	}
 }
 
-func TestSpacedRepetition_GivenTopicId_WhenRescheduleCalled_UpdateNextRunTime(t *testing.T)  {
+func TestSpacedRepetition_GivenTopicId_WhenRescheduleCalled_UpdateNextRunTime(t *testing.T) {
 	db := getDb(t)
 	defer db.Close()
-	defer func(){
+	defer func() {
 		_ = os.Remove("./sr.db")
 	}()
 
-	sr := SpacedRepetition{
-		SqlDataBase:db,
-	}
+	sr, topic := getTopic(db)
 
-	// Create table
-	sr.Init()
-
-	insertStatementTemplate := `
-insert into sr_data (title, times, next_run) values ("%s", 0, "%s")
-`
-	_, _ = db.Exec(fmt.Sprintf(insertStatementTemplate, "Test", time.Now().Format(
-		time.RFC3339)))
-
-	topic := sr.GetTopicNow()
-
-	if topic == nil {
-		t.Errorf("No topic fetched.")
-	}
-
-	if topic.Title != "Test" {
-		t.Error("Invalid topic.")
-	}
+	validateTopic(topic, t)
 
 	sr.RescheduleTopic(topic)
 
@@ -198,36 +178,22 @@ insert into sr_data (title, times, next_run) values ("%s", 0, "%s")
 	var count = 0
 
 	for rows.Next() {
-		var id int
-		var title string
-		var times int
-		var nextRun string
-		err := rows.Scan(&id, &title, &times, &nextRun)
-		if err != nil {
-			t.Error(err)
-		}
-		if title != "Test" {
-			t.Fail()
-		}
-
-		if id != 1 {
-			t.Fail()
-		}
-
-		if times != 0 {
-			t.Fail()
-		}
+		nextRun, times := readTopic(rows, t)
 
 		nr, _ := time.Parse(time.RFC3339,
 			nextRun)
 
 		// Scheduled 3 days ahead from now.
-		if nr.Before(time.Now().Add(time.Hour * 24 * 2)) == true {
+		if nr.Before(time.Now().Add(time.Hour*24*2)) == true {
 			t.Errorf("Next run is before two days %s", nr.String())
 		}
 
-		if nr.After(time.Now().Add(time.Hour * 24 * 4)) == true {
-			t.Fail()
+		if nr.After(time.Now().Add(time.Hour*24*4)) == true {
+			t.Error("Time is after 4 days")
+		}
+
+		if times == 0 {
+			t.Error("Times has not been updated.")
 		}
 
 		count++
@@ -238,15 +204,62 @@ insert into sr_data (title, times, next_run) values ("%s", 0, "%s")
 	}
 }
 
+func readTopic(rows *sql.Rows, t *testing.T) (string, int) {
+	var id int
+	var title string
+	var times int
+	var nextRun string
+	err := rows.Scan(&id, &title, &times, &nextRun)
+
+	if err != nil {
+		t.Error(err)
+	}
+
+	if title != "Test" {
+		t.Fail()
+	}
+
+	if id != 1 {
+		t.Fail()
+	}
+
+	return nextRun, times
+}
+
+func validateTopic(topic *Topic, t *testing.T) {
+	if topic == nil {
+		t.Errorf("No topic fetched.")
+		t.FailNow()
+	}
+	if topic.Title != "Test" {
+		t.Error("Invalid topic.")
+	}
+}
+
+func getTopic(db *sql.DB) (SpacedRepetition, *Topic) {
+	sr := SpacedRepetition{
+		SqlDataBase: db,
+	}
+	// Create table
+	sr.Init()
+	insertStatementTemplate := `
+	insert into sr_data (title, times, next_run) values ("%s", 0, "%s")
+	`
+	_, _ = db.Exec(fmt.Sprintf(insertStatementTemplate, "Test", time.Now().Format(
+		time.RFC3339)))
+	topic := sr.GetTopicNow()
+	return sr, topic
+}
+
 func TestSpacedRepetition_GivenTopics_WhenGetAllCalled_ThenReturnAllTopicSlice(t *testing.T) {
 	db := getDb(t)
 	defer db.Close()
-	defer func(){
+	defer func() {
 		_ = os.Remove("./sr.db")
 	}()
 
 	sr := SpacedRepetition{
-		SqlDataBase:db,
+		SqlDataBase: db,
 	}
 
 	// Create table
@@ -273,3 +286,69 @@ func getDb(t *testing.T) *sql.DB {
 	return db
 }
 
+func TestSpacedRepetition_RescheduleTopicOneHour(t *testing.T) {
+	db := getDb(t)
+	defer db.Close()
+	defer func() {
+		_ = os.Remove("./sr.db")
+	}()
+
+	_, validTopic := getTopic(db)
+
+	type fields struct {
+		SqlDataBase *sql.DB
+	}
+	type args struct {
+		topic *Topic
+	}
+	tests := []struct {
+		name   string
+		fields fields
+		args   args
+		wantErr	bool
+	}{
+		{
+			"Reschedule in one hour",
+			fields{
+				db,
+			},
+			args{
+				validTopic,
+			},
+			false,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			sr := SpacedRepetition{
+				SqlDataBase: tt.fields.SqlDataBase,
+			}
+			sr.RescheduleTopicOneHour(tt.args.topic)
+
+			if !tt.wantErr {
+				// Check that topic has been rescheduled for next hour in db.
+				rows, err := db.Query("select id, title, times, next_run from sr_data")
+
+				if err != nil {
+					t.FailNow()
+				}
+
+				for rows.Next() {
+					nextRun, _ := readTopic(rows, t)
+
+					nr, _ := time.Parse(time.RFC3339,
+						nextRun)
+
+					// Scheduled 3 days ahead from now.
+					if nr.Before(time.Now().Add(time.Minute*59)) == true {
+						t.Errorf("Next run is before one hour %s", nr.String())
+					}
+
+					if nr.After(time.Now().Add(time.Minute*61)) == true {
+						t.Fail()
+					}
+				}
+			}
+		})
+	}
+}
