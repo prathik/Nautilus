@@ -8,7 +8,7 @@ Spaced repetition along with active learning are the top methods to learn a new 
 
 * https://www.youtube.com/watch?v=Z-zNHHpXoMM&t
 
-This tools allows you to do that quickly from your terminal and not have to deal with a gui.
+This tools allows you to do that quickly from your terminal.
 
 ## Installation (MacOS only)
 
