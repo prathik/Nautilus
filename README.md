@@ -15,3 +15,11 @@ This tools allows you to do that quickly from your terminal and not have to deal
 `brew tap prathik/spacedrepetition`
 
 `brew install spacedrepetition`
+
+## Usage
+
+* Create a directory for something you want to learn
+
+* Run `sr add` to add something you have learnt
+
+* Run `sr now` to revise it
