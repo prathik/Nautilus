@@ -10,12 +10,14 @@ import (
 	_ "github.com/mattn/go-sqlite3"
 )
 
+func clearDb() {
+	_ = os.Remove("./sr.db")
+}
+
 func TestSpacedRepetition_Add(t *testing.T) {
 	db := getDb(t)
 	defer db.Close()
-	defer func() {
-		_ = os.Remove("./sr.db")
-	}()
+	defer clearDb()
 
 	sr := SpacedRepetition{
 		SqlDataBase: db,
@@ -82,9 +84,7 @@ from sr_data`)
 func TestSpacedRepetition_DoubleInit(t *testing.T) {
 	db := getDb(t)
 	defer db.Close()
-	defer func() {
-		_ = os.Remove("./sr.db")
-	}()
+	defer clearDb()
 
 	sr := SpacedRepetition{
 		SqlDataBase: db,
@@ -108,9 +108,7 @@ func TestSpacedRepetition_DoubleInit(t *testing.T) {
 func TestSpacedRepetition_GivenTopicInDb_WhenGetCalled_ReturnTopTopic(t *testing.T) {
 	db := getDb(t)
 	defer db.Close()
-	defer func() {
-		_ = os.Remove("./sr.db")
-	}()
+	defer clearDb()
 
 	sr := SpacedRepetition{
 		SqlDataBase: db,
@@ -136,9 +134,7 @@ insert into sr_data (title, times, next_run) values ("%s", 0, "%s")
 func TestSpacedRepetition_GivenNoTopicInDb_WhenGetCalled_ReturnTopTopic(t *testing.T) {
 	db := getDb(t)
 	defer db.Close()
-	defer func() {
-		_ = os.Remove("./sr.db")
-	}()
+	defer clearDb()
 
 	sr := SpacedRepetition{
 		SqlDataBase: db,
@@ -157,9 +153,7 @@ func TestSpacedRepetition_GivenNoTopicInDb_WhenGetCalled_ReturnTopTopic(t *testi
 func TestSpacedRepetition_GivenTopicId_WhenRescheduleCalled_UpdateNextRunTime(t *testing.T) {
 	db := getDb(t)
 	defer db.Close()
-	defer func() {
-		_ = os.Remove("./sr.db")
-	}()
+	defer clearDb()
 
 	sr, topic := getTopic(db)
 
@@ -254,9 +248,7 @@ func getTopic(db *sql.DB) (SpacedRepetition, *Topic) {
 func TestSpacedRepetition_GivenTopics_WhenGetAllCalled_ThenReturnAllTopicSlice(t *testing.T) {
 	db := getDb(t)
 	defer db.Close()
-	defer func() {
-		_ = os.Remove("./sr.db")
-	}()
+	defer clearDb()
 
 	sr := SpacedRepetition{
 		SqlDataBase: db,
@@ -289,9 +281,7 @@ func getDb(t *testing.T) *sql.DB {
 func TestSpacedRepetition_RescheduleTopicOneHour(t *testing.T) {
 	db := getDb(t)
 	defer db.Close()
-	defer func() {
-		_ = os.Remove("./sr.db")
-	}()
+	defer clearDb()
 
 	_, validTopic := getTopic(db)
 
