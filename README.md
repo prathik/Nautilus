@@ -1,4 +1,4 @@
-# Spaced Repetition Cli
+# Nautilus
 
 A spaced repetition tool.
 
