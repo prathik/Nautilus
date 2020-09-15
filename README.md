@@ -12,9 +12,9 @@ This tools allows you to do that quickly from your terminal.
 
 ## Installation (MacOS only)
 
-`brew tap prathik/spacedrepetition`
+`brew tap prathik/Nautilus`
 
-`brew install spacedrepetition`
+`brew install Nautilus`
 
 ## Usage
 
